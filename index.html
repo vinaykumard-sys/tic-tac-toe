@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Tic Tac Toe — play online with a code</title>
+<meta name="description" content="Zero sign-up online tic tac toe. Create a room, share a 5-character code, play with a friend on any device." />
+<meta name="theme-color" content="#0b1020" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⭕</text></svg>" />
+<style>
+  :root{
+    --bg:#0b1020;
+    --panel:rgba(255,255,255,.045);
+    --line:rgba(255,255,255,.11);
+    --text:#e9edfb;
+    --muted:#8e9cbe;
+    --x:#22d3ee;
+    --o:#f472b6;
+    --gold:#facc15;
+    --accent:#6366f1;
+    --radius:18px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(900px 600px at 12% -10%, rgba(99,102,241,.28), transparent 60%),
+      radial-gradient(800px 600px at 92% 8%, rgba(34,211,238,.18), transparent 55%),
+      radial-gradient(700px 500px at 50% 115%, rgba(244,114,182,.14), transparent 60%),
+      var(--bg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:22px 16px 34px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .app{width:100%;max-width:430px}
+  header{text-align:center;margin-bottom:22px}
+  .logo{
+    display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    font-size:1.6rem;font-weight:800;letter-spacing:-.02em;
+  }
+  .logo .x{color:var(--x);text-shadow:0 0 26px rgba(34,211,238,.55)}
+  .logo .o{color:var(--o);text-shadow:0 0 26px rgba(244,114,182,.55)}
+  .tag{margin:8px 0 0;color:var(--muted);font-size:.86rem;line-height:1.5}
+
+  .card{
+    background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.028));
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px;
+    backdrop-filter:blur(14px);
+    box-shadow:0 24px 60px -28px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+
+  button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+  button:disabled{cursor:not-allowed;opacity:.45}
+
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;padding:14px 16px;border-radius:14px;font-weight:650;font-size:.95rem;
+    transition:transform .12s ease, filter .2s ease, background .2s ease;
+  }
+  .btn:active:not(:disabled){transform:translateY(1px) scale(.995)}
+  .btn-primary{
+    background:linear-gradient(180deg,#7c7ff5,#5457e8);
+    box-shadow:0 12px 28px -12px rgba(99,102,241,.9), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .btn-primary:hover:not(:disabled){filter:brightness(1.08)}
+  .btn-ghost{background:var(--panel);border:1px solid var(--line)}
+  .btn-ghost:hover:not(:disabled){background:rgba(255,255,255,.08)}
+
+  .divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.09em}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  form.join{display:flex;gap:9px}
+  .code-input{
+    flex:1;min-width:0;
+    padding:14px 16px;border-radius:14px;
+    background:rgba(0,0,0,.28);border:1px solid var(--line);
+    color:var(--text);font-size:1.1rem;font-weight:750;letter-spacing:.34em;
+    text-transform:uppercase;text-align:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .code-input::placeholder{letter-spacing:.2em;color:#5b6890}
+  .code-input:focus{outline:none;border-color:rgba(124,127,245,.85);box-shadow:0 0 0 4px rgba(99,102,241,.18)}
+  form.join .btn{width:auto;padding:14px 20px}
+
+  /* ---------- game ---------- */
+  .room{
+    display:flex;align-items:center;gap:10px;
+    padding:11px 13px;border-radius:14px;background:rgba(0,0,0,.24);border:1px solid var(--line);
+    margin-bottom:14px;
+  }
+  .room .label{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .room .code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.15rem;font-weight:800;
+    letter-spacing:.2em;color:#fff;
+  }
+  .room .spacer{flex:1}
+  .chip{
+    padding:6px 11px;border-radius:999px;font-size:.72rem;font-weight:700;
+    border:1px solid var(--line);background:var(--panel);white-space:nowrap;
+  }
+  .chip.x{color:var(--x);border-color:rgba(34,211,238,.45);background:rgba(34,211,238,.1)}
+  .chip.o{color:var(--o);border-color:rgba(244,114,182,.45);background:rgba(244,114,182,.1)}
+  .chip.spectator{color:var(--muted)}
+
+  .status{
+    display:flex;align-items:center;justify-content:center;gap:9px;
+    min-height:44px;margin:2px 0 14px;font-size:.95rem;font-weight:650;text-align:center;
+  }
+  .status .dot{width:8px;height:8px;border-radius:99px;background:var(--muted);flex:none}
+  .status.turn-x .dot{background:var(--x);box-shadow:0 0 12px var(--x)}
+  .status.turn-o .dot{background:var(--o);box-shadow:0 0 12px var(--o)}
+  .status.win .dot{background:var(--gold);box-shadow:0 0 12px var(--gold)}
+  .status.wait .dot{background:var(--accent);animation:pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1.25)}}
+
+  .board{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+    width:100%;aspect-ratio:1/1;
+  }
+  .cell{
+    display:grid;place-items:center;
+    background:rgba(255,255,255,.04);
+    border:1px solid var(--line);
+    border-radius:16px;
+    font-size:clamp(2.2rem,13vw,3.1rem);font-weight:800;line-height:1;
+    transition:background .16s, border-color .16s, transform .12s, box-shadow .25s;
+    user-select:none;
+  }
+  .cell.x{color:var(--x);text-shadow:0 0 26px rgba(34,211,238,.5)}
+  .cell.o{color:var(--o);text-shadow:0 0 26px rgba(244,114,182,.5)}
+  body.playable .cell:not(.x):not(.o):hover{background:rgba(99,102,241,.16);border-color:rgba(124,127,245,.6);transform:translateY(-2px)}
+  .cell.win{
+    background:rgba(250,204,21,.13);
+    border-color:rgba(250,204,21,.75);
+    box-shadow:0 0 26px -6px rgba(250,204,21,.6), inset 0 0 22px rgba(250,204,21,.14);
+  }
+  .cell:disabled{opacity:1}
+  .board.locked .cell{cursor:default}
+
+  .actions{display:flex;gap:9px;margin-top:16px}
+  .actions .btn{padding:12px}
+  .hint{margin:12px 0 0;text-align:center;font-size:.76rem;color:var(--muted);line-height:1.5}
+  .hint b{color:#c3ccec;font-weight:650}
+
+  footer{margin-top:18px;text-align:center;font-size:.72rem;color:#6b779b;line-height:1.6}
+  footer a{color:#93a0c0;text-decoration:none;border-bottom:1px dotted #4a5678}
+
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);
+    background:rgba(15,20,38,.96);border:1px solid var(--line);
+    padding:12px 16px;border-radius:12px;font-size:.85rem;font-weight:600;
+    opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;
+    max-width:calc(100vw - 32px);text-align:center;z-index:50;
+    box-shadow:0 18px 40px -18px #000;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  [hidden]{display:none !important}
+  .fade-in{animation:fade .3s ease both}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo"><span class="x">✕</span><span>tic tac toe</span><span class="o">◯</span></div>
+    <p class="tag">No sign-up. Create a room, share the code, play on any two devices.</p>
+  </header>
+
+  <!-- LOBBY -->
+  <section id="lobby" class="card">
+    <button id="createBtn" class="btn btn-primary">Create a game</button>
+    <div class="divider"><span>or join a friend</span></div>
+    <form class="join" id="joinForm" autocomplete="off">
+      <input id="codeInput" class="code-input" inputmode="text" maxlength="5"
+             placeholder="CODE" aria-label="Room code" spellcheck="false" />
+      <button class="btn btn-ghost" type="submit">Join</button>
+    </form>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" class="card" hidden>
+    <div class="room">
+      <div>
+        <div class="label">Room code</div>
+        <div class="code" id="roomCode">·····</div>
+      </div>
+      <div class="spacer"></div>
+      <span class="chip" id="seatChip">…</span>
+      <button class="chip" id="copyBtn" title="Copy invite link">Copy link</button>
+    </div>
+
+    <div class="status" id="status"><span class="dot"></span><span id="statusText">Connecting…</span></div>
+
+    <div class="board" id="board" aria-label="Tic tac toe board"></div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" id="rematchBtn">Play again</button>
+      <button class="btn btn-ghost" id="leaveBtn">Leave</button>
+    </div>
+    <p class="hint" id="hint"></p>
+  </section>
+
+  <footer>
+    Real-time backend on <b>Supabase</b> · hosted on <b>Vercel</b><br />
+    <span id="footNote">Share the link — it carries the room code.</span>
+  </footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ------------------------------------------------------------------ *
+   *  Config — these are public client credentials (RLS protects data).  *
+   * ------------------------------------------------------------------ */
+  const SUPABASE_URL = "https://hurdcuilcplmpipresqx.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1cmRjdWlsY3BsbXBpcHJlc3F4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4Mjg2MzgsImV4cCI6MjEwODQwNDYzOH0.H5wv8jKRdTUYreP2WB-Ocb26xBSdsntX9cunhEh5qEo";
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    realtime: { params: { eventsPerSecond: 10 } }
+  });
+
+  /* Stable anonymous identity — no account, just a device id. */
+  const pid = (function () {
+    try {
+      let v = localStorage.getItem("ttt_player");
+      if (!v || v.length < 30) {
+        v = (crypto.randomUUID && crypto.randomUUID()) ||
+            ("p-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12));
+        localStorage.setItem("ttt_player", v);
+      }
+      return v;
+    } catch (_) {
+      return "p-" + Math.random().toString(36).slice(2, 14) + Math.random().toString(36).slice(2, 8);
+    }
+  })();
+
+  /* ------------------------------------------------------------------ *
+   *  Elements                                                           *
+   * ------------------------------------------------------------------ */
+  const $ = (id) => document.getElementById(id);
+  const lobbyEl = $("lobby"), gameEl = $("game"), boardEl = $("board");
+  const roomCodeEl = $("roomCode"), seatChip = $("seatChip"), statusEl = $("status");
+  const statusText = $("statusText"), hintEl = $("hint"), toastEl = $("toast");
+  const codeInput = $("codeInput"), rematchBtn = $("rematchBtn");
+
+  const cells = [];
+  for (let i = 0; i < 9; i++) {
+    const b = document.createElement("button");
+    b.className = "cell";
+    b.type = "button";
+    b.dataset.i = String(i);
+    b.setAttribute("aria-label", "Square " + (i + 1));
+    b.addEventListener("click", () => play(i));
+    boardEl.appendChild(b);
+    cells.push(b);
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  State                                                              *
+   * ------------------------------------------------------------------ */
+  let game = null;      // current row from public.games
+  let room = null;      // room code
+  let channel = null;   // realtime subscription
+  let poller = null;    // safety-net polling
+  let busy = false;
+  let toastTimer = null;
+
+  const CODES = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+  /* ------------------------------------------------------------------ *
+   *  Helpers                                                            *
+   * ------------------------------------------------------------------ */
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2600);
+  }
+
+  function myMark() {
+    if (!game) return null;
+    if (game.x_player === pid) return "X";
+    if (game.o_player === pid) return "O";
+    return null;
+  }
+
+  function normalizeCode(v) {
+    return String(v || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
+  }
+
+  function friendlyError(message) {
+    const m = String(message || "");
+    if (m.includes("ROOM_NOT_FOUND")) return "No game found with that code.";
+    if (m.includes("WAITING_FOR_OPPONENT")) return "Waiting for someone to join…";
+    if (m.includes("NOT_YOUR_TURN")) return "Hold on — it's their turn.";
+    if (m.includes("CELL_TAKEN")) return "That square is already taken.";
+    if (m.includes("GAME_OVER")) return "This round is over — tap Play again.";
+    if (m.includes("NOT_A_PLAYER")) return "You're spectating this game.";
+    if (m.includes("BAD_CELL")) return "Pick a different square.";
+    if (m.includes("failed to fetch") || m.includes("NetworkError")) return "Connection lost — retrying…";
+    return "Something went wrong. Try again.";
+  }
+
+  function shareUrl(code) {
+    return location.origin + location.pathname + "?room=" + code;
+  }
+
+  function parseRow(data) {
+    if (!data) return null;
+    return typeof data === "string" ? JSON.parse(data) : data;
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Rendering                                                          *
+   * ------------------------------------------------------------------ */
+  function render() {
+    if (!game) return;
+
+    const me = myMark();
+    const opponent = me === "X" ? "O" : me === "O" ? "X" : null;
+    const waiting = game.status === "waiting";
+    const done = game.status === "done";
+    const myTurn = !!me && game.status === "playing" && game.turn === me;
+
+    roomCodeEl.textContent = game.code;
+
+    // seat chip
+    seatChip.className = "chip " + (me ? me.toLowerCase() : "spectator");
+    seatChip.textContent = me ? "You are " + me : "Spectator";
+
+    // status line
+    statusEl.className = "status";
+    if (waiting) {
+      statusEl.classList.add("wait");
+      statusText.textContent = "Waiting for an opponent — share code " + game.code;
+    } else if (done) {
+      statusEl.classList.add("win");
+      if (game.winner === "draw") statusText.textContent = "It's a draw. Rematch?";
+      else if (game.winner === me) statusText.textContent = "You win! 🎉";
+      else if (me) statusText.textContent = "You lose — " + game.winner + " took it.";
+      else statusText.textContent = game.winner + " wins.";
+    } else if (!me) {
+      statusEl.classList.add(game.turn === "X" ? "turn-x" : "turn-o");
+      statusText.textContent = "Spectating · " + game.turn + " to move";
+    } else {
+      statusEl.classList.add(game.turn === "X" ? "turn-x" : "turn-o");
+      statusText.textContent = myTurn ? "Your turn (" + me + ")" : "Their turn (" + opponent + ")";
+    }
+
+    // board
+    const winLine = Array.isArray(game.winning_line)
+      ? game.winning_line
+      : (game.winning_line ? JSON.parse(game.winning_line) : []);
+
+    cells.forEach((cell, i) => {
+      const v = game.board[i] || "";
+      cell.textContent = v === "X" ? "✕" : v === "O" ? "◯" : "";
+      cell.className = "cell" + (v ? " " + v.toLowerCase() : "") + (winLine.includes(i) ? " win" : "");
+      cell.disabled = !myTurn || !!v;
+    });
+
+    boardEl.classList.toggle("locked", !myTurn);
+    document.body.classList.toggle("playable", myTurn);
+
+    rematchBtn.disabled = !me || waiting;
+    rematchBtn.textContent = done ? "Play again" : "Restart";
+
+    // hint
+    if (waiting) {
+      hintEl.innerHTML = "Send <b>" + shareUrl(game.code) + "</b> to a friend. They join as <b>O</b> automatically.";
+    } else if (!me) {
+      hintEl.innerHTML = "You're watching this room. Open it in a private window to grab the free seat.";
+    } else if (done) {
+      hintEl.innerHTML = "Winner starts second next round.";
+    } else {
+      hintEl.innerHTML = "Tap any empty square. Moves sync instantly.";
+    }
+
+    document.title = done
+      ? (game.winner === "draw" ? "Draw" : game.winner + " wins") + " · Tic Tac Toe"
+      : "Room " + game.code + " · Tic Tac Toe";
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Realtime + fallback polling                                        *
+   * ------------------------------------------------------------------ */
+  function unsubscribe() {
+    if (channel) { try { sb.removeChannel(channel); } catch (_) {} channel = null; }
+    if (poller) { clearInterval(poller); poller = null; }
+  }
+
+  function subscribe(code) {
+    unsubscribe();
+
+    channel = sb
+      .channel("room:" + code)
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "games", filter: "code=eq." + code },
+        (payload) => {
+          const row = payload.new || payload.record;
+          if (row && row.code === code) { game = row; render(); }
+        })
+      .subscribe();
+
+    // safety net: realtime can be blocked by proxies/offline
+    poller = setInterval(async () => {
+      if (!room || document.hidden) return;
+      try {
+        const { data } = await sb.from("games").select("*").eq("code", room).maybeSingle();
+        if (data) { game = data; render(); }
+      } catch (_) {}
+    }, 3000);
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Actions                                                            *
+   * ------------------------------------------------------------------ */
+  async function createGame() {
+    $("createBtn").disabled = true;
+    try {
+      const { data, error } = await sb.rpc("new_game", { p_player: pid });
+      if (error) throw error;
+      enter(parseRow(data));
+    } catch (e) {
+      toast(friendlyError(e && e.message));
+    } finally {
+      $("createBtn").disabled = false;
+    }
+  }
+
+  async function joinGame(rawCode, silent) {
+    const code = normalizeCode(rawCode);
+    if (code.length !== 5) { if (!silent) toast("Enter the 5-character room code."); return; }
+    try {
+      const { data, error } = await sb.rpc("join_game", { p_code: code, p_player: pid });
+      if (error) throw error;
+      enter(parseRow(data));
+    } catch (e) {
+      if (!silent) toast(friendlyError(e && e.message));
+      else { codeInput.value = code; }
+    }
+  }
+
+  async function play(i) {
+    if (!game || busy) return;
+    const me = myMark();
+    if (!me) { toast("You're spectating this game."); return; }
+    if (game.status === "waiting") { toast("Waiting for an opponent to join."); return; }
+    if (game.status === "done") { toast("Round over — tap Play again."); return; }
+    if (game.turn !== me) { toast("Not your turn yet."); return; }
+    if (game.board[i]) return;
+
+    busy = true;
+    cells[i].disabled = true;
+    try {
+      const { data, error } = await sb.rpc("make_move", { p_code: room, p_player: pid, p_cell: i });
+      if (error) throw error;
+      game = parseRow(data); render();
+    } catch (e) {
+      toast(friendlyError(e && e.message));
+      render();
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function rematch() {
+    if (!game || !myMark()) return;
+    rematchBtn.disabled = true;
+    try {
+      const { data, error } = await sb.rpc("reset_game", { p_code: room, p_player: pid });
+      if (error) throw error;
+      game = parseRow(data); render();
+    } catch (e) {
+      toast(friendlyError(e && e.message));
+      rematchBtn.disabled = false;
+    }
+  }
+
+  function enter(row) {
+    if (!row) { toast("Could not load that room."); return; }
+    game = row;
+    room = row.code;
+
+    lobbyEl.hidden = true;
+    gameEl.hidden = false;
+    gameEl.classList.remove("fade-in");
+    void gameEl.offsetWidth;
+    gameEl.classList.add("fade-in");
+
+    try { history.replaceState(null, "", "?room=" + room); } catch (_) {}
+
+    subscribe(room);
+    render();
+  }
+
+  function leave() {
+    unsubscribe();
+    game = null; room = null;
+    gameEl.hidden = true;
+    lobbyEl.hidden = false;
+    document.title = "Tic Tac Toe — play online with a code";
+    document.body.classList.remove("playable");
+    try { history.replaceState(null, "", location.pathname); } catch (_) {}
+    codeInput.value = "";
+    codeInput.focus();
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Wiring                                                             *
+   * ------------------------------------------------------------------ */
+  $("createBtn").addEventListener("click", createGame);
+
+  $("joinForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    joinGame(codeInput.value);
+  });
+
+  codeInput.addEventListener("input", () => {
+    const pos = codeInput.selectionStart;
+    codeInput.value = normalizeCode(codeInput.value);
+    try { codeInput.setSelectionRange(pos, pos); } catch (_) {}
+  });
+
+  $("copyBtn").addEventListener("click", async () => {
+    const url = shareUrl(room);
+    try {
+      await navigator.clipboard.writeText(url);
+      toast("Invite link copied ✓");
+    } catch (_) {
+      // clipboard API needs a secure context; fall back to manual copy
+      const ta = document.createElement("textarea");
+      ta.value = url; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); toast("Invite link copied ✓"); }
+      catch (__) { toast(url); }
+      document.body.removeChild(ta);
+    }
+  });
+
+  rematchBtn.addEventListener("click", rematch);
+  $("leaveBtn").addEventListener("click", leave);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && room) leave();
+  });
+
+  document.addEventListener("visibilitychange", async () => {
+    if (!document.hidden && room) {
+      const { data } = await sb.from("games").select("*").eq("code", room).maybeSingle();
+      if (data) { game = data; render(); }
+    }
+  });
+
+  /* Deep link: ?room=ABCDE joins straight away. */
+  (function boot() {
+    const p = new URLSearchParams(location.search);
+    const deep = normalizeCode(p.get("room") || p.get("code") || p.get("r") || "");
+    if (deep.length === 5) {
+      codeInput.value = deep;
+      joinGame(deep, true);
+    } else {
+      codeInput.focus({ preventScroll: true });
+    }
+  })();
+})();
+</script>
+</body>
+</html>
